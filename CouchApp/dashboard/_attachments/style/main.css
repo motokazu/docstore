@@ -1,0 +1,15 @@
+/* add styles here */
+div.itempopup {
+	width: 300px;
+	position: absolute;
+	left: -9999px;
+	background: #EEE;
+	padding: 4px;
+	border: 1px solid #AAA;
+}
+div.itempopup p{
+	color: #FFF;
+	background: #222;
+	padding: 3px 3px;
+	font-size: 11px;
+}

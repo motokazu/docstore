@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+ <head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>dashboard - list  : for docstore</title>
+	<meta name="generator" content="TextMate http://macromates.com/">
+	<meta name="author" content="Motokazu Nishimura">
+	<link rel="stylesheet" href="{{ assets }}/style/main.css" type="text/css">
+	<link rel="stylesheet" href="{{ assets }}/style/jquery.lightbox-0.5.css" type="text/css" media="screen">
+	<!-- Date: 2010-06-23 -->
+ </head>
+ <body>
+	DashBoard - list
+	<hr size="1">
+	<div id="tagcloud"></div>
+	<hr size="1">
+	<div id="set"></div>
+	<div id="profile">
+		<br>
+		Since Jan 2011.
+	</div>
+ </body>
+
+ <script src="/_utils/script/json2.js"></script>
+ <script src="/_utils/script/jquery.js?1.3.1"></script>
+ <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
+ <script src="{{ assets }}/script/jquery.lightbox-0.5.min.js"></script>
+
+<script id="source"> 
+function genpopup(id, elems){
+	var tags = "";
+	for(var i in elems.tags){
+		if ( tags != "" ) tags = tags + " "
+		tags = tags + elems.tags[i];
+	}
+	var d = new Date();
+	d.setTime(elems.ctime); // ajust to JST +0900 ,millisec
+	var created_at = d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()+" "+
+					d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+					
+	$("body").append("<div class='itempopup' id='popup-"+id+"'><p>"+
+		"created at "+created_at+"<br>tags "+tags+"<br>"+elems.comment+"</p></div>");
+		
+	return $("#popup-"+id);
+}
+
+function gentagcloud(){
+	var d = $("#tagcloud");
+	$.ajax({
+		type: 'GET',
+		url: '{{ assets }}/_view/tag?group=true',
+		dataType: 'json',
+		success: function(data, dataType){
+			$.each(data.rows, function(index, tag){
+				var t = jQuery("<a>").attr({
+					"href":"#"+tag.key
+				}).click(function(){
+					$('a.'+tag.key+':first').click();
+				});
+				d.append(t.append(tag.key+"("+tag.value+")"));
+				$('a.'+tag.key).lightBox();
+			});
+		},
+		error: function(data){
+			alert("gen tag cloud failed.");
+		}
+	});
+}
+
+$(function () {
+	var filestore_uri = "http://sheevabian:8080/"
+	$.ajax({
+		type: 'GET',
+		url: '{{ assets }}/_view/all',
+		dataType: 'json',
+		success: function(data, dataType){
+			var itempattr = {
+				'style' : 'clear:none; margin:0; padding: 1em 0; word-wrap:break-word;'
+			};
+			$.each(data.rows,function(index,obj){
+				var ptext = jQuery('<p>').attr(itempattr);
+				for(key in obj.value._attachments){
+					var filess = obj.value.filename;
+					// following 3 lines are temporary code..
+					var files = filess.split(".");
+					var filepng = files[0]+".png";
+					var original_uri = filestore_uri+filepng;
+					
+					var tags = "";
+					for(var i in obj.value.tags){
+						if ( tags != "" ) tags = tags + " "
+						tags = tags + obj.value.tags[i];
+					}
+					var a = jQuery('<a>').attr({
+							"href": original_uri,
+							"class": tags
+							});
+					var img = jQuery('<img>').attr({
+						"src": "/docstore/"+obj.id+"/"+key,
+						"alt": "this obj name is "+obj.value.filename+
+								" and has tags as "+tags,
+						"border":"0"
+							});
+					
+					/// mouse over window
+					var popup = genpopup(obj.id, obj.value);
+					img.mouseover(function(){
+						popup.css({opacity:0.8, display:"none"}).fadeIn(200);
+					}).mousemove(function(mouse){
+						popup.css({left:mouse.pageX+15, top:mouse.pageY+15});
+					}).mouseout(function(){
+						popup.fadeOut(200);
+					});
+					
+					a.append(img);
+					$('#set').append(a);
+					//ptext.append(a);
+				}
+				//$('#set').append(a);
+			});
+		},
+		error: function(msg){
+			alert("Failed.");
+		}
+	});
+	
+	// generate Tag Cloud
+	gentagcloud();
+});
+</script>
+
+</html>
